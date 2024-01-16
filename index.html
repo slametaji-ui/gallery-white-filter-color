@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Gallery</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.0/color-thief.min.js"></script>
+    <style>
+        .image-container {
+            width: 300px;
+            height: 300px;
+            overflow: hidden;
+            margin: 10px;
+        }
+
+        .image-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container mt-5">
+        <div class="form-group">
+            <label for="colorFilter">Filter by Color:</label>
+            <select id="colorFilter" class="form-control">
+                <option value="" selected>All Colors</option>
+                <option value="#ffffff">White</option>
+                <option value="#000000">Black</option>
+                <option value="#00ff00">Green</option>
+                <option value="#ff0000">Red</option>
+                <option value="#ffff00">Yellow</option>
+                <option value="#ffc0cb">Pink</option>
+                <option value="#0000ff">Blue</option>
+                <option value="#ff00ff">Magenta</option>
+                <option value="#800080">Purple</option>
+                <option value="#ffa500">Orange</option>
+                <option value="#808080">Gray</option>
+            </select>
+        </div>
+
+        <div class="row" id="image-gallery"></div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            function displayImages() {
+                var imgFolder = './img/';
+
+                $.ajax({
+                    url: imgFolder,
+                    success: function (data) {
+                        $(data).find("a:contains('.jpeg')").each(function () {
+                            var rawfilename = this.href.replace(window.location.host, "").replace("http://", "");
+                            var filename = rawfilename.replace('html/', 'html/img/');
+                            $('#image-gallery').append(
+                                '<div class="col-md-4">' +
+                                '<div class="image-container" data-color="">' +
+                                '<img src="' + filename + '" class="img-fluid">' +
+                                '</div>' +
+                                '</div>'
+                            );
+                        });
+
+                        applyColorFilter();
+                    }
+                });
+            }
+
+            function applyColorFilter(selectedColor) {
+                $('#image-gallery .image-container').each(function () {
+                    var img = $(this).find('img')[0];
+
+                    getDominantColor(img, function (color) {
+                        $(this).data('color', color);
+                        if (!selectedColor || isColorSimilar(color, selectedColor, 100)) {
+                            $(this).parent().show();
+                        } else {
+                            $(this).parent().hide();
+                        }
+                    }.bind(this));
+                });
+            }
+
+            function getDominantColor(img, callback) {
+                var colorThief = new ColorThief();
+                var color = colorThief.getColor(img);
+                var hexColor = rgbToHex(color[0], color[1], color[2]);
+                callback(hexColor);
+            }
+
+            function rgbToHex(r, g, b) {
+                return '#' + (1 << 24 | r << 16 | g << 8 | b).toString(16).slice(1);
+            }
+
+            function isColorSimilar(color1, color2, threshold) {
+                var rgb1 = hexToRgb(color1);
+                var rgb2 = hexToRgb(color2);
+
+                var distance = Math.sqrt(
+                    Math.pow(rgb1.r - rgb2.r, 2) +
+                    Math.pow(rgb1.g - rgb2.g, 2) +
+                    Math.pow(rgb1.b - rgb2.b, 2)
+                );
+
+                return distance <= threshold;
+            }
+
+            function hexToRgb(hex) {
+                var bigint = parseInt(hex.substring(1), 16);
+                var r = (bigint >> 16) & 255;
+                var g = (bigint >> 8) & 255;
+                var b = bigint & 255;
+                return { r: r, g: g, b: b };
+            }
+
+            $('#colorFilter').change(function () {
+                var selectedColor = $(this).val();
+                applyColorFilter(selectedColor);
+            });
+
+            displayImages();
+        });
+    </script>
+
+</body>
+
+</html>
